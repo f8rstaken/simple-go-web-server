@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -18,6 +19,13 @@ type Truck struct {
 	speed *int64
 	x     *float64
 	y     *float64
+}
+
+type TruckData struct {
+	Plate string  `json:"plate"`
+	Speed int64   `json:"speed"`
+	X     float64 `json:"x"`
+	Y     float64 `json:"y"`
 }
 
 func connectToDatabase(username string, password string, addr string) *sql.DB {
@@ -46,8 +54,8 @@ func connectToDatabase(username string, password string, addr string) *sql.DB {
 	return db
 }
 
-func queryTrucks(dbInstance *sql.DB) ([]Truck, error) {
-	var trucks []Truck
+func queryTrucks(dbInstance *sql.DB) ([]TruckData, error) {
+	var trucks []TruckData
 
 	rows, err := dbInstance.Query("SELECT * FROM trucks")
 	if err != nil {
@@ -56,8 +64,8 @@ func queryTrucks(dbInstance *sql.DB) ([]Truck, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var truck Truck
-		if err := rows.Scan(&truck.plate, &truck.speed, &truck.x, &truck.y); err != nil {
+		var truck TruckData
+		if err := rows.Scan(&truck.Plate, &truck.Speed, &truck.X, &truck.Y); err != nil {
 			return nil, fmt.Errorf("GET /trucks: %v", err)
 		}
 		trucks = append(trucks, truck)
@@ -66,6 +74,14 @@ func queryTrucks(dbInstance *sql.DB) ([]Truck, error) {
 		return nil, fmt.Errorf("GET /trucks: %v", err)
 	}
 	return trucks, nil
+}
+
+func convertToJSON(trucks []TruckData) ([]byte, error) {
+	jsonData, err := json.Marshal(trucks)
+	if err != nil {
+		return nil, fmt.Errorf("Converting to JSON: %v", err)
+	}
+	return jsonData, nil
 }
 
 func insertTruck(dbInstance *sql.DB, truck Truck) (int64, error) {

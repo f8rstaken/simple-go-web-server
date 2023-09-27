@@ -56,12 +56,22 @@ func trucksHandler(dbInstance *sql.DB) http.HandlerFunc {
 
 		switch r.Method {
 		case "GET":
-			var trucks, err = queryTrucks(dbInstance)
+			w.Header().Set("Content-Type", "application/json")
+			trucks, err := queryTrucks(dbInstance)
 			if err != nil {
 				fmt.Printf("GET /trucks: %v", err)
 				return
 			}
-			fmt.Fprintf(w, "GET Trucks: %v", trucks)
+			trucksData, err := convertToJSON(trucks)
+			if err != nil {
+				fmt.Printf("GET /trucks: %v", err)
+				return
+			}
+
+			_, err = w.Write(trucksData)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Writing JSON response: %v", err), http.StatusInternalServerError)
+			}
 		case "POST":
 			_, err := insertTruck(dbInstance, truck)
 			if err != nil {
