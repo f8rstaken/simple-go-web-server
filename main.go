@@ -9,6 +9,8 @@ import (
 
 func main() {
 	var db *sql.DB = connectToDatabase(DB_USERNAME, DB_PASSWORD, DB_ADDR)
+	go cacheTrucks(db)
+	
 	http.HandleFunc("/trucks", trucksHandler(db))
 
 	listener, error := net.Listen("tcp", ":8080")

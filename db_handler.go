@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 )
@@ -13,6 +14,11 @@ import (
 const DB_USERNAME = "root"
 const DB_PASSWORD = "root"
 const DB_ADDR = "127.0.0.1:3306"
+
+const CACHE_DELAY_IN_SECONDS = 60
+
+const WARNING_PREFIX = "[!]"
+const INFO_PREFIX = "[*]"
 
 type Truck struct {
 	plate *string
@@ -27,6 +33,8 @@ type TruckData struct {
 	X     float64 `json:"x"`
 	Y     float64 `json:"y"`
 }
+
+var cachedTrucks []TruckData;
 
 func connectToDatabase(username string, password string, addr string) *sql.DB {
 
@@ -52,6 +60,19 @@ func connectToDatabase(username string, password string, addr string) *sql.DB {
 	}
 
 	return db
+}
+
+func cacheTrucks(dbInstance *sql.DB)  {
+	var err error
+	for {
+		cachedTrucks, err = queryTrucks(dbInstance);
+		if err != nil {
+			fmt.Printf("%s Failed to query trucks to cache: %v\n", WARNING_PREFIX, err);
+		} else {
+			fmt.Printf("%s Succesfully quried trucks to cache\n", INFO_PREFIX);
+		}
+		time.Sleep(CACHE_DELAY_IN_SECONDS * time.Second)
+	}
 }
 
 func queryTrucks(dbInstance *sql.DB) ([]TruckData, error) {

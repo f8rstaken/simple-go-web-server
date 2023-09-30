@@ -44,6 +44,11 @@ func readPostTruckData(r *http.Request) Truck {
 // Function used for handling the /trucks endpoint
 func trucksHandler(dbInstance *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if origin := r.Header.Get("Origin"); origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Accept, Accept-Language, Content-Type")
+		}
 
 		var truck Truck
 		if r.Method != "GET" {
@@ -57,12 +62,13 @@ func trucksHandler(dbInstance *sql.DB) http.HandlerFunc {
 		switch r.Method {
 		case "GET":
 			w.Header().Set("Content-Type", "application/json")
-			trucks, err := queryTrucks(dbInstance)
-			if err != nil {
-				fmt.Printf("GET /trucks: %v", err)
-				return
-			}
-			trucksData, err := convertToJSON(trucks)
+
+			// trucks, err := queryTrucks(dbInstance)
+			// if err != nil {
+			// 	fmt.Printf("GET /trucks: %v", err)
+			// 	return
+			// }
+			trucksData, err := convertToJSON(cachedTrucks)
 			if err != nil {
 				fmt.Printf("GET /trucks: %v", err)
 				return
